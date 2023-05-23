@@ -44,3 +44,17 @@ opentelemetry-instrument \
     --exporter_otlp_headers "x-honeycomb-team=${HONEYCOMB_API_KEY}" \
     celery --app tasks worker --loglevel=INFO
 ```
+
+## call the task to generate telemetry
+
+```sh
+# in a new terminal, activate env again
+source env/bin/activate
+
+# start python3 interpreter
+python3
+
+# import add function and delay
+>>> from tasks import add
+>>> add.delay(4, 4)
+```
