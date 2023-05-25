@@ -1,38 +1,36 @@
 # celery
 
-## setup simple celery with redis
+## setup django and redis
 
 ```sh
 # set up virtual env
 python3 -m venv env
 source env/bin/activate
 
-# install celery
-python3 -m pip install celery
+# install all the things
+python3 -m pip install -r requirements.txt
 
-# install redis
-python3 -m pip install -U "celery[redis]"
-
-# run redis
+# run redis in (detached) docker
 docker run -d -p 6379:6379 redis
 
-# run the worker on its own
-celery --app=tasks worker --loglevel=INFO
+# navigate to mysite directory
+cd mysite
+
+# start server
+python3 manage.py runserver
 ```
 
-## add opentelemetry
+## run celery with otel
 
 ```sh
-# stop the celery task with ctrl+c
+# in a new terminal, activate env again
+source env/bin/activate
+
 # set API key
 export HONEYCOMB_API_KEY=<yourkey>
 
-# install opentelemetry distro and exporter
-python3 -m pip install opentelemetry-distro \
-  opentelemetry-exporter-otlp
-
-# install instrumentation packages
-opentelemetry-bootstrap -a install
+# navigate to site direcotry
+cd mysite
 
 # run the agent with the worker
 opentelemetry-instrument \
@@ -42,19 +40,18 @@ opentelemetry-instrument \
     --exporter_otlp_protocol "http/protobuf" \
     --exporter_otlp_endpoint "https://api.honeycomb.io" \
     --exporter_otlp_headers "x-honeycomb-team=${HONEYCOMB_API_KEY}" \
-    celery --app tasks worker --loglevel=INFO
+    celery --app=mysite worker --loglevel=INFO
 ```
 
-## call the task to generate telemetry
+## curl the endpoint to generate telemetry
 
 ```sh
-# in a new terminal, activate env again
-source env/bin/activate
+# this endpoint triggers a task in celery
+curl localhost:8000/polls/
+```
 
-# start python3 interpreter
-python3
+NOTE: If Redis is too noisy, disable when setting the API Key:
 
-# import add function and delay
->>> from tasks import add
->>> add.delay(4, 4)
+```sh
+export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=redis
 ```
